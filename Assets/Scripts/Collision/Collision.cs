@@ -22,6 +22,10 @@ public static class Collision
                 if(circleA.Contains(circleB))
                 {
                     Contact contact = new Contact() { bodyA = bodyA, bodyB = bodyB};
+                    float distance = (circleA.center - circleB.center).magnitude;
+                    contact.depth = (circleA.radius + circleB.radius) - distance;
+                    contact.normal = (circleA.center - circleB.center).normalized;
+
                     contacts.Add(contact);
                 }
             }
