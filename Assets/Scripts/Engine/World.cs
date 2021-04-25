@@ -6,10 +6,13 @@ using UnityEngine;
 public class World : MonoBehaviour
 {
     public BoolData simulate;
+    public BoolData collision;
+    public BoolData wrap;
     public FloatData gravity;
     public FloatData gravitation;
     public FloatData fixedFps;
     public StringData fpsText;
+    
     public float timeAccumulator;
     public float FixedDeltaTime { get { return 1.0f / fixedFps.value; }  }
     float fps = 0;
@@ -18,7 +21,7 @@ public class World : MonoBehaviour
 
     static World instance;
     public static World Instance { get { return instance; } }
-
+    Vector2 size;
     public Vector2 Gravity { get { return new Vector2(0, gravity.value); } }
     
     
@@ -26,6 +29,7 @@ public class World : MonoBehaviour
     private void Awake()
     {
         instance = this;
+        size = Camera.main.ViewportToWorldPoint(Vector2.one);
     }
     void Update()
     {
@@ -45,17 +49,24 @@ public class World : MonoBehaviour
 
         while (timeAccumulator >= FixedDeltaTime) 
         { 
-            bodies.ForEach(body => body.Step(FixedDeltaTime)); 
-            bodies.ForEach(body => Integrator.SemiImplicitEuler(body, FixedDeltaTime));
+                bodies.ForEach(body => body.Step(FixedDeltaTime)); 
+                bodies.ForEach(body => Integrator.SemiImplicitEuler(body, FixedDeltaTime));
 
-            bodies.ForEach(body => body.shape.color = Color.white);
+                bodies.ForEach(body => body.shape.color = Color.white);
 
-            Collision.CreateContact(bodies, out List<Contact> contacts);
-            contacts.ForEach(contact => { contact.bodyA.shape.color = Color.blue; contact.bodyB.shape.color = Color.blue; });
-            ContactSolver.Resolve(contacts);
+            if(collision == true)
+            {
+                Collision.CreateContact(bodies, out List<Contact> contacts);
+                contacts.ForEach(contact => { contact.bodyA.shape.color = Color.blue; contact.bodyB.shape.color = Color.blue; });
+                ContactSolver.Resolve(contacts);
+            }
+                timeAccumulator = timeAccumulator - FixedDeltaTime;
 
-            timeAccumulator = timeAccumulator - FixedDeltaTime;
+        }
 
+        if(wrap)
+        {
+            bodies.ForEach(body => body.position = Utilites.Wrap(body.position, -size, size));
         }
         
         bodies.ForEach(body => body.force = Vector2.zero);
